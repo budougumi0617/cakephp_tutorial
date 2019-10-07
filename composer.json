@@ -5,7 +5,7 @@
     "type": "project",
     "license": "MIT",
     "require": {
-        "php": ">=5.6",
+        "php": ">=7.3",
         "cakephp/cakephp": "3.8.*",
         "cakephp/migrations": "^2.0.0",
         "cakephp/plugin-installer": "^1.0",
@@ -17,7 +17,8 @@
         "cakephp/debug_kit": "^3.17.0",
         "josegonzalez/dotenv": "3.*",
         "phpunit/phpunit": "^5|^6",
-        "psy/psysh": "@stable"
+        "psy/psysh": "@stable",
+        "phpmd/phpmd": "@stable"
     },
     "suggest": {
         "markstory/asset_compress": "An asset compression plugin which provides file concatenation and a flexible filter system for preprocessing and minification.",
