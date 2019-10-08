@@ -18,3 +18,4 @@
         </tr>
     <?php endforeach; ?>
 </table>
+<?= $this->Html->link('記事の追加', ['action' => 'add']) ?>
