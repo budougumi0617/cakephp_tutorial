@@ -14,6 +14,7 @@
 !/tmp/sessions/empty
 /tmp/tests/*
 !/tmp/tests/empty
+/tmp/cache/twigView/
 
 /logs/*
 !/logs/empty
