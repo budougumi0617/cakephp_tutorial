@@ -5,6 +5,7 @@ namespace App\Model\Table;
 use Cake\ORM\Table;
 use Cake\Utility\Text;
 use Cake\Validation\Validator;
+use Cake\ORM\Query;
 
 class ArticlesTable extends Table
 {
@@ -27,16 +28,43 @@ class ArticlesTable extends Table
 
     // Validationの詳細は以下のページにある。
     // https://book.cakephp.org/3.0/ja/core-libraries/validation.html
-    public function validationDefault(Validator $validator) : Validator
+    public function validationDefault(Validator $validator): Validator
     {
         $validator
             ->allowEmptyString('title', false)
             ->minLength('title', 10)
             ->maxLength('title', 255)
-
             ->allowEmptyString('body', false)
             ->minLength('body', 10);
 
         return $validator;
+    }
+
+    // $query 引数はクエリービルダーのインスタンスです。
+    // $options 配列には、コントローラーのアクションで find('tagged') に渡した
+    // "tags" オプションが含まれています。
+    public function findTagged(Query $query, array $options)
+    {
+        $columns = [
+            'Articles.id', 'Articles.user_id', 'Articles.title',
+            'Articles.body', 'Articles.published', 'Articles.created',
+            'Articles.slug',
+        ];
+
+        $query = $query
+            ->select($columns)
+            ->distinct($columns);
+
+        if (empty($options['tags'])) {
+            // タグが指定されていない場合は、タグのない記事を検索します。
+            $query->leftJoinWith('Tags')
+                ->where(['Tags.title IS' => null]);
+        } else {
+            // 提供されたタグが1つ以上ある記事を検索します。
+            $query->innerJoinWith('Tags')
+                ->where(['Tags.title IN' => $options['tags']]);
+        }
+
+        return $query->group(['Articles.id']);
     }
 }
