@@ -30,7 +30,6 @@ class ArticlesController extends AppController
     public function add()
     {
         $article = $this->Articles->newEntity();
-        // requestはServerRequestクラス
         if ($this->request->is('post')) {
             $article = $this->Articles->patchEntity($article, $this->request->getData());
 
@@ -43,20 +42,37 @@ class ArticlesController extends AppController
             }
             $this->Flash->error(__('Unable to add your article.'));
         }
+        // タグのリストを取得
+        $tags = $this->Articles->Tags->find('list');
+
+        // ビューコンテキストに tags をセット
+        $this->set('tags', $tags);
+
         $this->set('article', $article);
     }
 
     public function edit($slug)
     {
-        $article = $this->Articles->findBySlug($slug)->firstOrFail();
+        $article = $this->Articles
+            ->findBySlug($slug)
+            ->contain('Tags') // 関連づけられた Tags を読み込む
+            ->firstOrFail();
         if ($this->request->is(['post', 'put'])) {
             $this->Articles->patchEntity($article, $this->request->getData());
             if ($this->Articles->save($article)) {
+                // __(string)はi18n用のメソッド。
+                // https://book.cakephp.org/3.0/ja/core-libraries/internationalization-and-localization.html
                 $this->Flash->success(__('Your article has been updated.'));
                 return $this->redirect(['action' => 'index']);
             }
             $this->Flash->error(__('Unable to update your article.'));
         }
+
+        // タグのリストを取得
+        $tags = $this->Articles->Tags->find('list');
+
+        // ビューコンテキストに tags をセット
+        $this->set('tags', $tags);
 
         $this->set('article', $article);
     }

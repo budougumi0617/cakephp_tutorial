@@ -11,6 +11,9 @@ class ArticlesTable extends Table
     public function initialize(array $config)
     {
         $this->addBehavior('Timestamp');
+        // アソシエーションなどの情報はこのへん
+        // https://book.cakephp.org/3.0/ja/orm/associations.html
+        $this->belongsToMany('Tags');
     }
 
     public function beforeSave($event, $entity, $options)
