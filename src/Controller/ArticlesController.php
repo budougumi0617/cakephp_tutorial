@@ -12,6 +12,8 @@ class ArticlesController extends AppController
         $this->loadComponent('Paginator');
         // フラッシュメッセージを表示するためのコンポーネント
         $this->loadComponent('Flash'); // FlashComponent をインクルード
+
+        $this->Auth->allow(['tags']);
     }
 
     public function index()
@@ -33,8 +35,8 @@ class ArticlesController extends AppController
         if ($this->request->is('post')) {
             $article = $this->Articles->patchEntity($article, $this->request->getData());
 
-            // user_id の決め打ちは一時的なもので、あとで認証を構築する際に削除されます。
-            $article->user_id = 1;
+            // 変更: セッションから user_id をセット
+            $article->user_id = $this->Auth->user('id');
 
             if ($this->Articles->save($article)) {
                 $this->Flash->success(__('Your article has been saved.'));
@@ -42,38 +44,29 @@ class ArticlesController extends AppController
             }
             $this->Flash->error(__('Unable to add your article.'));
         }
-        // タグのリストを取得
-        $tags = $this->Articles->Tags->find('list');
-
-        // ビューコンテキストに tags をセット
-        $this->set('tags', $tags);
-
         $this->set('article', $article);
     }
 
+    // 関連情報
+    // https://book.cakephp.org/3.0/ja/orm/saving-data.html#changing-accessible-fields
     public function edit($slug)
     {
         $article = $this->Articles
             ->findBySlug($slug)
             ->contain('Tags') // 関連づけられた Tags を読み込む
             ->firstOrFail();
+
         if ($this->request->is(['post', 'put'])) {
-            $this->Articles->patchEntity($article, $this->request->getData());
+            $this->Articles->patchEntity($article, $this->request->getData(), [
+                // 追加: user_id の更新を無効化
+                'accessibleFields' => ['user_id' => false]
+            ]);
             if ($this->Articles->save($article)) {
-                // __(string)はi18n用のメソッド。
-                // https://book.cakephp.org/3.0/ja/core-libraries/internationalization-and-localization.html
                 $this->Flash->success(__('Your article has been updated.'));
                 return $this->redirect(['action' => 'index']);
             }
             $this->Flash->error(__('Unable to update your article.'));
         }
-
-        // タグのリストを取得
-        $tags = $this->Articles->Tags->find('list');
-
-        // ビューコンテキストに tags をセット
-        $this->set('tags', $tags);
-
         $this->set('article', $article);
     }
 
@@ -108,5 +101,25 @@ class ArticlesController extends AppController
             'articles' => $articles,
             'tags' => $tags
         ]);
+    }
+
+    public function isAuthorized($user)
+    {
+        $action = $this->request->getParam('action');
+        // add および tags アクションは、常にログインしているユーザーに許可されます。
+        if (in_array($action, ['add', 'tags'])) {
+            return true;
+        }
+
+        // 他のすべてのアクションにはスラッグが必要です。
+        $slug = $this->request->getParam('pass.0');
+        if (!$slug) {
+            return false;
+        }
+
+        // 記事が現在のユーザーに属していることを確認します。
+        $article = $this->Articles->findBySlug($slug)->first();
+
+        return $article->user_id === $user['id'];
     }
 }
